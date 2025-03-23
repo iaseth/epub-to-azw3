@@ -6,10 +6,26 @@ import subprocess
 
 
 
+def get_size(path):
+	if not os.path.isfile(path):
+		return "NULL"
+
+	size = os.path.getsize(path)  # Get file size in bytes
+
+	for unit in ['bytes', 'KB', 'MB', 'GB', 'TB']:
+		if size < 1024:
+			return f"{size:.2f} {unit}"
+		size /= 1024
+
+	return f"{size:.2f} PB"  # Handle extremely large files
+
+
 class EpubEbook:
-	def __init__(self, root, filename):
+	def __init__(self, root, filename, app):
 		self.root = root
 		self.filename = filename
+		self.idx = app.count
+		self.app = app
 		self.epub_path = os.path.join(root, filename)
 		self.azw3_path = os.path.join(root, os.path.splitext(filename)[0] + ".azw3")
 
@@ -19,31 +35,36 @@ class EpubEbook:
 		return False
 
 	def convert_epub_to_azw3(self, force=False):
+		print(f"({self.idx+1} / {self.app.count}) {self.epub_path} ({get_size(self.epub_path)})")
 		if not force and self.azw3_exists():
 			# Skip conversion if AZW3 exists and is newer than EPUB
-			print(f"Skipping {self.filename}, AZW3 is up-to-date."); return
+			print(f"\tSkipping {self.filename} ({get_size(self.azw3_path)}), AZW3 is up-to-date."); return
 
-		print(f"Converting {self.filename} to AZW3...")
+		print(f"\tConverting {self.filename} to AZW3...")
 		subprocess.run(["ebook-convert", self.epub_path, self.azw3_path], check=True)
-		print(f"Conversion completed: {self.azw3_path}")
+		print(f"\tConversion completed: {self.azw3_path}")
 
 
-def get_all_epub_objects(directory):
-	epubs = []
-	for root, _, files in os.walk(directory):
-		for filename in files:
-			if filename.lower().endswith(".epub"):
-				epub = EpubEbook(root, filename)
-				epubs.append(epub)
+class ConvertApp:
+	def __init__(self, directory):
+		self.directory = directory
+		self.setup_epubs()
 
-	return epubs
+	@property
+	def count(self):
+		return len(self.epubs)
 
+	def setup_epubs(self):
+		self.epubs = []
+		for root, _, files in os.walk(self.directory):
+			for filename in files:
+				if filename.lower().endswith(".epub"):
+					epub = EpubEbook(root, filename, self)
+					self.epubs.append(epub)
 
-def convert_epub_to_azw3(directory):
-	"""Convert all EPUB files in the directory to AZW3 using Calibre's ebook-convert."""
-	epubs = get_all_epub_objects(directory)
-	for epub in epubs:
-		epub.convert_epub_to_azw3()
+	def convert_epub_to_azw3(self):
+		for epub in self.epubs:
+			epub.convert_epub_to_azw3()
 
 
 def main():
@@ -51,7 +72,8 @@ def main():
 	parser.add_argument("directory", metavar="DIR", type=str, help="Path to the directory containing EPUB files")
 	args = parser.parse_args()
 
-	convert_epub_to_azw3(args.directory)
+	app = ConvertApp(args.directory)
+	app.convert_epub_to_azw3()
 
 
 if __name__ == "__main__":
