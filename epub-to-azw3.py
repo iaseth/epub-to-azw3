@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import argparse
 import subprocess
 
@@ -20,6 +21,23 @@ def get_size(path):
 	return f"{size:.2f} PB"  # Handle extremely large files
 
 
+def _colorize(color_code, *args, sep=' '):
+	text = sep.join(map(str, args))
+	return f"\033[{color_code}m{text}\033[0m"
+
+def red(*args, sep=' '):
+	return _colorize(31, *args, sep=sep)
+
+def green(*args, sep=' '):
+	return _colorize(32, *args, sep=sep)
+
+def yellow(*args, sep=' '):
+	return _colorize(33, *args, sep=sep)
+
+def blue(*args, sep=' '):
+	return _colorize(34, *args, sep=sep)
+
+
 class EpubEbook:
 	def __init__(self, root, filename, app):
 		self.root = root
@@ -35,14 +53,14 @@ class EpubEbook:
 		return False
 
 	def convert_epub_to_azw3(self, force=False):
-		print(f"({self.idx+1} / {self.app.count}) {self.epub_path} ({get_size(self.epub_path)})")
+		print(f"({self.idx+1} / {self.app.count}) {blue(self.epub_path)} ({yellow(get_size(self.epub_path))})")
 		if not force and self.azw3_exists():
 			# Skip conversion if AZW3 exists and is newer than EPUB
-			print(f"\tSkipping {self.filename} ({get_size(self.azw3_path)}), AZW3 is up-to-date."); return
+			print(f"\tSkipping {green(self.azw3_path)} ({yellow(get_size(self.azw3_path))}), AZW3 is up-to-date."); return
 
-		print(f"\tConverting {self.filename} to AZW3...")
+		print(f"\tConverting {yellow(self.filename)} to AZW3...")
 		subprocess.run(["ebook-convert", self.epub_path, self.azw3_path], check=True)
-		print(f"\tConversion completed: {self.azw3_path}")
+		print(f"\tConversion completed: {green(self.azw3_path)} ({yellow(get_size(self.azw3_path))})")
 
 
 class ConvertApp:
