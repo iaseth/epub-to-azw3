@@ -28,13 +28,22 @@ class EpubEbook:
 		print(f"Conversion completed: {self.azw3_path}")
 
 
-def convert_epub_to_azw3(directory):
-	"""Convert all EPUB files in the directory to AZW3 using Calibre's ebook-convert."""
+def get_all_epub_objects(directory):
+	epubs = []
 	for root, _, files in os.walk(directory):
 		for filename in files:
 			if filename.lower().endswith(".epub"):
 				epub = EpubEbook(root, filename)
-				epub.convert_epub_to_azw3()
+				epubs.append(epub)
+
+	return epubs
+
+
+def convert_epub_to_azw3(directory):
+	"""Convert all EPUB files in the directory to AZW3 using Calibre's ebook-convert."""
+	epubs = get_all_epub_objects(directory)
+	for epub in epubs:
+		epub.convert_epub_to_azw3()
 
 
 def main():
