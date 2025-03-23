@@ -8,19 +8,20 @@ import subprocess
 
 def convert_epub_to_azw3(directory):
 	"""Convert all EPUB files in the directory to AZW3 using Calibre's ebook-convert."""
-	for filename in os.listdir(directory):
-		if filename.lower().endswith(".epub"):
-			epub_path = os.path.join(directory, filename)
-			azw3_path = os.path.join(directory, os.path.splitext(filename)[0] + ".azw3")
+	for root, _, files in os.walk(directory):
+		for filename in files:
+			if filename.lower().endswith(".epub"):
+				epub_path = os.path.join(root, filename)
+				azw3_path = os.path.join(root, os.path.splitext(filename)[0] + ".azw3")
 
-			# Skip conversion if AZW3 exists and is newer than EPUB
-			if os.path.exists(azw3_path) and os.path.getmtime(azw3_path) > os.path.getmtime(epub_path):
-				print(f"Skipping {filename}, AZW3 is up-to-date.")
-				continue
+				# Skip conversion if AZW3 exists and is newer than EPUB
+				if os.path.exists(azw3_path) and os.path.getmtime(azw3_path) > os.path.getmtime(epub_path):
+					print(f"Skipping {filename}, AZW3 is up-to-date.")
+					continue
 
-			print(f"Converting {filename} to AZW3...")
-			subprocess.run(["ebook-convert", epub_path, azw3_path], check=True)
-			print(f"Conversion completed: {azw3_path}")
+				print(f"Converting {filename} to AZW3...")
+				subprocess.run(["ebook-convert", epub_path, azw3_path], check=True)
+				print(f"Conversion completed: {azw3_path}")
 
 
 def main():
